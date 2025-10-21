@@ -1,95 +1,96 @@
-import Image from "next/image";
-import styles from "./page.module.css";
+"use client";
+import { useState } from "react";
 
-export default function Home() {
+export default function Page() {
+  const [code, setCode] = useState("");
+  const [stdin, setStdin] = useState("");
+  const [output, setOutput] = useState("");
+  const [plaintext, setPlaintext] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  async function runCode() {
+    setLoading(true);
+    setOutput("");
+    try {
+      const res = await fetch("/api/run", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "run", code, input: stdin }),
+      });
+      const data = await res.json();
+      if (data.success) setOutput(data.output);
+      else setOutput("Error: " + data.error);
+    } catch (e) {
+      setOutput("Network error: " + e.message);
+    }
+    setLoading(false);
+  }
+
+  async function reverseTranslate() {
+    setLoading(true);
+    try {
+      const res = await fetch("/api/run", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "reverse", plaintext }),
+      });
+      const data = await res.json();
+      if (data.success) setCode(data.lyrics);
+      else setOutput("Error: " + data.error);
+    } catch (e) {
+      setOutput("Network error: " + e.message);
+    }
+    setLoading(false);
+  }
+
   return (
-    <div className={styles.page}>
-      <main className={styles.main}>
-        <Image
-          className={styles.logo}
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol>
-          <li>
-            Get started by editing <code>app/page.js</code>.
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+    <main style={{ maxWidth: 900, margin: "30px auto", fontFamily: "system-ui", padding: 20 }}>
+      <h1>🎵 Never Gonna Fuck You Up — Interpreter</h1>
 
-        <div className={styles.ctas}>
-          <a
-            className={styles.primary}
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className={styles.logo}
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-            className={styles.secondary}
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className={styles.footer}>
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
+      <label><strong>Code (NGFYU)</strong></label>
+      <textarea
+        rows={8}
+        style={{ width: "100%" }}
+        value={code}
+        onChange={(e) => setCode(e.target.value)}
+      />
+
+      <label><strong>Input (stdin)</strong></label>
+      <input
+        style={{ width: "100%", marginBottom: 10 }}
+        value={stdin}
+        onChange={(e) => setStdin(e.target.value)}
+      />
+
+      <button onClick={runCode} disabled={loading}>
+        {loading ? "Running..." : "Run"}
+      </button>
+
+      <h3>Output</h3>
+      <pre
+        style={{
+          background: "#111",
+          color: "#0f0",
+          padding: 10,
+          minHeight: 100,
+          whiteSpace: "pre-wrap",
+        }}
+      >
+        {output}
+      </pre>
+
+      <hr style={{ margin: "30px 0" }} />
+
+      <h3>Translate plaintext → NGFYU</h3>
+      <input
+        style={{ width: "100%" }}
+        placeholder="Enter text to translate"
+        value={plaintext}
+        onChange={(e) => setPlaintext(e.target.value)}
+      />
+      <button onClick={reverseTranslate} disabled={loading} style={{ marginTop: 10 }}>
+        {loading ? "..." : "Translate"}
+      </button>
+    </main>
   );
 }
